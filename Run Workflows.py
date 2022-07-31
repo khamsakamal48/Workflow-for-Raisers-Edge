@@ -48,6 +48,7 @@ SMTP_URL = os.getenv("SMTP_URL")
 SMTP_PORT = os.getenv("SMTP_PORT")
 SEND_TO  = os.getenv("SEND_TO")
 WORKFLOW_1_LIST_ID = os.getenv("WORKFLOW_1_LIST_ID")
+WORKFLOW_2_LIST_ID = os.getenv("WORKFLOW_2_LIST_ID")
 
 # Retrieve access_token from file
 print("Retrieve token from API connections")
@@ -254,6 +255,20 @@ def add_constituent_code():
     }
     
     post_request_re()
+    
+def assign_fundraisers():
+    print(f"Assigning constituents to {fundraising_team}")
+    
+    global url, params
+    
+    url = "https://api.sky.blackbaud.com/fundraising/v1/fundraisers/assignments"
+    
+    params = {
+        "constituent_id": constituent_id,
+        "fundraiser_id": fundraising_team_id
+    }
+    
+    post_request_re()
 
 def workflow_1():
     global constituent_id
@@ -274,6 +289,26 @@ def workflow_1():
                 
                 add_constituent_code()
 
+def workflow_2():
+    global constituent_id
+    print(f"Getting list of constituents not assigned to {fundraising_team}")
+    
+    get_list_from_re()
+    
+    print("Parsing content from List_from_RE_*.json files")
+    multiple_files = glob.glob("List_from_RE_*.json")
+    
+    for each_file in multiple_files:
+
+        # Open JSON file
+        with open(each_file, 'r') as json_file:
+            json_content = json.load(json_file)
+            
+            for results in json_content['value']:
+                constituent_id = results['id']
+                
+                assign_fundraisers()
+
 try:
     # WorkFlow #1
     print(f"Running WorkFlow #1 -> To tag constituents as Major Donor -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_1_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
@@ -282,6 +317,12 @@ try:
     constituent_code = "Major Donor"
     workflow_1()
     
+    # Workflow #2
+    print(f"Running Workflow #2 -> To assign constituents to Major Donor Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_2_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_2_LIST_ID
+    fundraising_team = "Major Donor Team"
+    fundraising_team_id = "397314"
+    workflow_2()
 
 except Exception as Argument:
     print("Error while running workflows for Raisers Edge")
