@@ -276,7 +276,7 @@ def workflow_1():
 
 try:
     # WorkFlow #1
-    print(f"Running WorkFlow #1 -> Get list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_1_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    print(f"Running WorkFlow #1 -> To tag constituents as Major Donor -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_1_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
     list_id = WORKFLOW_1_LIST_ID
     params = ""
     constituent_code = "Major Donor"
