@@ -47,6 +47,7 @@ IMAP_PORT = os.getenv("IMAP_PORT")
 SMTP_URL = os.getenv("SMTP_URL")
 SMTP_PORT = os.getenv("SMTP_PORT")
 SEND_TO  = os.getenv("SEND_TO")
+WORKFLOW_1_LIST_ID = os.getenv("WORKFLOW_1_LIST_ID")
 
 # Retrieve access_token from file
 print("Retrieve token from API connections")
@@ -275,8 +276,8 @@ def workflow_1():
 
 try:
     # WorkFlow #1
-    print("Running WorkFlow #1 -> Get list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/305c2c6f-129b-4fdf-8ce8-8e90a1a54001?envid=p-dzY8gGigKUidokeljxaQiA")
-    list_id = "305c2c6f-129b-4fdf-8ce8-8e90a1a54001"
+    print(f"Running WorkFlow #1 -> Get list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_1_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_1_LIST_ID
     params = ""
     constituent_code = "Major Donor"
     workflow_1()
