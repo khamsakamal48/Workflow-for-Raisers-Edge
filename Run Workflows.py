@@ -49,6 +49,7 @@ SMTP_PORT = os.getenv("SMTP_PORT")
 ERROR_EMAILS_TO  = os.getenv("ERROR_EMAILS_TO")
 WORKFLOW_1_LIST_ID = os.getenv("WORKFLOW_1_LIST_ID")
 WORKFLOW_2_LIST_ID = os.getenv("WORKFLOW_2_LIST_ID")
+WORKFLOW_3_LIST_ID = os.getenv("WORKFLOW_3_LIST_ID")
 
 # Retrieve access_token from file
 print("Retrieve token from API connections")
@@ -322,6 +323,13 @@ try:
     list_id = WORKFLOW_2_LIST_ID
     fundraising_team = "Major Donor Team"
     fundraising_team_id = "397314"
+    workflow_2()
+    
+    # Workflow #3
+    print(f"Running Workflow #3 -> To assign constituents to Corporate Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_3_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_3_LIST_ID
+    fundraising_team = "Corporate Team"
+    fundraising_team_id = "397340"
     workflow_2()
 
 except Exception as Argument:
