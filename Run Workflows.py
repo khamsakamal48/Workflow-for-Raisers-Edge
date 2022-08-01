@@ -51,11 +51,14 @@ WORKFLOW_1_LIST_ID = os.getenv("WORKFLOW_1_LIST_ID")
 WORKFLOW_2_LIST_ID = os.getenv("WORKFLOW_2_LIST_ID")
 WORKFLOW_3_LIST_ID = os.getenv("WORKFLOW_3_LIST_ID")
 
-# Retrieve access_token from file
-print("Retrieve token from API connections")
-with open('access_token_output.json') as access_token_output:
-  data = json.load(access_token_output)
-  access_token = data["access_token"]
+def get_access_token():
+    global access_token
+    
+    # Retrieve access_token from file
+    print("Retrieve token from API connections")
+    with open('access_token_output.json') as access_token_output:
+        data = json.load(access_token_output)
+        access_token = data["access_token"]
   
 def get_request_re():
     print("Running GET Request from RE function")
@@ -273,6 +276,8 @@ def assign_fundraisers():
 
 def workflow_1():
     global constituent_id
+    
+    get_access_token()
 
     get_list_from_re()
     
@@ -292,6 +297,9 @@ def workflow_1():
 
 def workflow_2():
     global constituent_id
+    
+    get_access_token()
+    
     print(f"Getting list of constituents not assigned to {fundraising_team}")
     
     get_list_from_re()
