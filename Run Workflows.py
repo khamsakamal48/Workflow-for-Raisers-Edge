@@ -50,6 +50,25 @@ ERROR_EMAILS_TO  = os.getenv("ERROR_EMAILS_TO")
 WORKFLOW_1_LIST_ID = os.getenv("WORKFLOW_1_LIST_ID")
 WORKFLOW_2_LIST_ID = os.getenv("WORKFLOW_2_LIST_ID")
 WORKFLOW_3_LIST_ID = os.getenv("WORKFLOW_3_LIST_ID")
+def connect_db():
+    global conn, cur
+    
+    # PostgreSQL DB Connection
+    conn = psycopg2.connect(host=DB_IP, dbname=DB_NAME, user=DB_USERNAME, password=DB_PASSWORD)
+
+    # Open connection
+    print("Creating connection with SQL database")
+    cur = conn.cursor()
+    
+def disconnect_db():
+    print("Closing connection with SQL database")
+     
+    # Close DB connection
+    if conn:
+        cur.close()
+        conn.close()
+        
+    exit()
 
 def get_access_token():
     global access_token
