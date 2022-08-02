@@ -87,9 +87,9 @@ def get_request_re():
     time.sleep(5)
     # Request Headers for Blackbaud API request
     headers = {
-    # Request headers
-    'Bb-Api-Subscription-Key': RE_API_KEY,
-    'Authorization': 'Bearer ' + access_token,
+        # Request headers
+        'Bb-Api-Subscription-Key': RE_API_KEY,
+        'Authorization': 'Bearer ' + access_token
     }
     
     global re_api_response
@@ -102,10 +102,10 @@ def post_request_re():
     print("Running POST Request to RE function")
     time.sleep(5)
     headers = {
-    # Request headers
-    'Bb-Api-Subscription-Key': RE_API_KEY,
-    'Authorization': 'Bearer ' + access_token,
-    'Content-Type': 'application/json',
+        # Request headers
+        'Bb-Api-Subscription-Key': RE_API_KEY,
+        'Authorization': 'Bearer ' + access_token,
+        'Content-Type': 'application/json'
     }
     
     global re_api_response
@@ -233,7 +233,7 @@ def attach_file_to_email(message, filename):
     
 def print_json(d):
     print(json.dumps(d, indent=4))
-
+    
 def housekeeping():
     # Read multiple files
     multiple_files = glob.glob("List_from_RE_*.json")
@@ -245,9 +245,9 @@ def housekeeping():
             os.remove(each_file)
         except:
             pass
-    
-    # Blackbaud API URL
-    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={list_id}"
+
+def get_list_from_re():
+    housekeeping()
     
     # Pagination request to retreive list
     while url:
@@ -296,9 +296,15 @@ def assign_fundraisers():
     post_request_re()
 
 def workflow_1():
-    global constituent_id
+    global constituent_id, params, constituent_code, url
     
     get_access_token()
+    
+    params = ""
+    constituent_code = "Major Donor"
+    
+    # Blackbaud API URL
+    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_1_LIST_ID}"
 
     get_list_from_re()
     
@@ -317,9 +323,43 @@ def workflow_1():
                 add_constituent_code()
 
 def workflow_2():
-    global constituent_id
+    global constituent_id, fundraising_team_id, url
     
     get_access_token()
+    
+    fundraising_team = "Major Donor Team"
+    fundraising_team_id = "397314"
+    
+    # Blackbaud API URL
+    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_2_LIST_ID}"
+    
+    print(f"Getting list of constituents not assigned to {fundraising_team}")
+    
+    get_list_from_re()
+    
+    print("Parsing content from List_from_RE_*.json files")
+    multiple_files = glob.glob("List_from_RE_*.json")
+    
+    for each_file in multiple_files:
+
+        # Open JSON file
+        with open(each_file, 'r') as json_file:
+            json_content = json.load(json_file)
+            
+            for results in json_content['value']:
+                constituent_id = results['id']
+                
+                assign_fundraisers()
+                
+def workflow_3():
+    global fundraising_team, fundraising_team_id, url
+    
+    get_access_token()
+    fundraising_team = "Corporate Team"
+    fundraising_team_id = "397340"
+    
+    # Blackbaud API URL
+    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_3_LIST_ID}"
     
     print(f"Getting list of constituents not assigned to {fundraising_team}")
     
@@ -339,27 +379,76 @@ def workflow_2():
                 
                 assign_fundraisers()
 
+def workflow_4():
+    global url, constituent_id
+    
+    get_access_token()
+    
+    # Blackbaud API URL
+    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_4_LIST_ID}"
+    
+    get_list_from_re()
+    
+    # Parse from JSON and write to CSV file
+    # Header of CSV file
+    header = ['gift_id', 'amount', 'constituent_id', 'date', 'date_added', 'date_modified', 'lookup_id']
+    
+    with open('Corporate_Gifts.csv', 'w', encoding='UTF8') as csv_file:
+        writer = csv.writer(csv_file, delimiter = ";")
+
+        # Write the header
+        writer.writerow(header)
+    
+    print("Parsing content from List_from_RE_*.json files")
+    multiple_files = glob.glob("List_from_RE_*.json")
+    
+    for each_file in multiple_files:
+
+        # Open JSON file
+        with open(each_file, 'r') as json_file:
+            json_content = json.load(json_file)
+            
+            for results in json_content['value']:
+                data = (results['id'], results['amount']['value'], results['constituent_id'], results['date'], results['date_added'], results['date_modified'], results['lookup_id'])
+                
+                with open('Corporate_Gifts.csv', 'a', encoding='UTF8') as csv_file:
+                    writer = csv.writer(csv_file, delimiter = ";")
+                    writer.writerow(data)
+                    
+    # Delete rows in table
+    cur.execute("truncate corporate_gifts;")
+    
+    # Copying contents of CSV file to PostgreSQL DB
+    with open('Corporate_Gifts.csv', 'r') as input_csv:
+        # Skip the header row.
+        next(input_csv)
+        cur.copy_from(input_csv, 'corporate_gifts', sep=';')
+    
+    # Commit changes
+    conn.commit()
+
 try:
+    connect_db()
+    
     # WorkFlow #1
     print(f"Running WorkFlow #1 -> To tag constituents as Major Donor -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_1_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
-    list_id = WORKFLOW_1_LIST_ID
-    params = ""
-    constituent_code = "Major Donor"
     workflow_1()
     
     # Workflow #2
-    print(f"Running Workflow #2 -> To assign constituents to Major Donor Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_2_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
-    list_id = WORKFLOW_2_LIST_ID
-    fundraising_team = "Major Donor Team"
-    fundraising_team_id = "397314"
+    print(f"Running Workflow #2 -> To assign constituents to Major Donor Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_2_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")    
     workflow_2()
     
     # Workflow #3
     print(f"Running Workflow #3 -> To assign constituents to Corporate Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_3_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
-    list_id = WORKFLOW_3_LIST_ID
-    fundraising_team = "Corporate Team"
-    fundraising_team_id = "397340"
-    workflow_2()
+    workflow_3()
+    
+    # Workflow #4
+    print(f"Running Workflow #3 -> To assign custom actions to Corporate Team -> Getting list of gifts in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_4_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    workflow_4()
+    
+    # Close DB connection and exit
+    housekeeping()
+    disconnect_db()
 
 except Exception as Argument:
     print("Error while running workflows for Raisers Edge")
