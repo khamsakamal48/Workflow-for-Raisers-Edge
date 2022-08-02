@@ -216,7 +216,8 @@ def send_error_emails():
         imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(time.time()), emailcontent.encode('utf8'))
         imap.logout()
         
-    exit()
+    # Close DB connection
+    disconnect_db()
     
 def attach_file_to_email(message, filename):
     # Open the attachment file for reading in binary mode, and make it a MIMEApplication class
@@ -233,9 +234,7 @@ def attach_file_to_email(message, filename):
 def print_json(d):
     print(json.dumps(d, indent=4))
 
-def get_list_from_re():
-    global url
-    
+def housekeeping():
     # Read multiple files
     multiple_files = glob.glob("List_from_RE_*.json")
     
