@@ -190,7 +190,7 @@ def send_error_emails():
     # Create a text/html message from a rendered template
     emailbody = MIMEText(
         Environment().from_string(TEMPLATE).render(
-            job_name = "Syncing Raisers Edge and AlmaBase",
+            job_name = "Running Workflows for Raisers Edge",
             current_time=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             error_log_message = Argument
         ), "html"
