@@ -247,7 +247,12 @@ def housekeeping():
             pass
 
 def get_list_from_re():
+    global url
     housekeeping()
+    
+    # Blackbaud API URL
+    url = f"{url_prefix}?list_id={list_id}&limit=5000"
+    print(url)
     
     # Pagination request to retreive list
     while url:
@@ -269,8 +274,8 @@ def get_list_from_re():
                 break
 
 def add_constituent_code():
+    global url, params, constituent_code, fundraising_team_id
     print(f"Adding constituent codes - {constituent_code} to record")
-    global url, params
     
     url = "https://api.sky.blackbaud.com/constituent/v1/constituentcodes"
     
@@ -296,15 +301,9 @@ def assign_fundraisers():
     post_request_re()
 
 def workflow_1():
-    global constituent_id, params, constituent_code, url
+    global constituent_id
     
     get_access_token()
-    
-    params = ""
-    constituent_code = "Major Donor"
-    
-    # Blackbaud API URL
-    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_1_LIST_ID}"
 
     get_list_from_re()
     
@@ -323,15 +322,9 @@ def workflow_1():
                 add_constituent_code()
 
 def workflow_2():
-    global constituent_id, fundraising_team_id, url
+    global constituent_id, fundraising_team
     
     get_access_token()
-    
-    fundraising_team = "Major Donor Team"
-    fundraising_team_id = "397314"
-    
-    # Blackbaud API URL
-    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_2_LIST_ID}"
     
     print(f"Getting list of constituents not assigned to {fundraising_team}")
     
@@ -352,14 +345,9 @@ def workflow_2():
                 assign_fundraisers()
                 
 def workflow_3():
-    global fundraising_team, fundraising_team_id, url
+    global constituent_id, fundraising_team
     
     get_access_token()
-    fundraising_team = "Corporate Team"
-    fundraising_team_id = "397340"
-    
-    # Blackbaud API URL
-    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_3_LIST_ID}"
     
     print(f"Getting list of constituents not assigned to {fundraising_team}")
     
@@ -383,9 +371,6 @@ def workflow_4():
     global url, constituent_id
     
     get_access_token()
-    
-    # Blackbaud API URL
-    url = f"https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={WORKFLOW_4_LIST_ID}"
     
     get_list_from_re()
     
@@ -426,24 +411,88 @@ def workflow_4():
     
     # Commit changes
     conn.commit()
+    
+    extract_sql =  """
+    SELECT * FROM corporate_gifts WHERE NOT EXISTS (SELECT 1 FROM actions_tagged_for_corporate_gifts WHERE actions_tagged_for_corporate_gifts.gift_id = corporate_gifts.gift_id) FETCH FIRST 1 ROW ONLY;
+    """
+    
+    cur.execute(extract_sql)
+    result = cur.fetchall()
+    
+    print(result)
+    
+    # Ensure no comma or brackets in output
+    result_list = list(result[0])
+    gift_id = result_list[0]
+    amount = result_list[1]
+    constituent_id = result_list[2]
+    date_str = result_list[3]
+    date_added = result_list[4]
+    date_modified = result_list[5]
+    lookup_id = result_list[6]
+    
+    print(gift_id)
+    print(amount)
+    print(constituent_id)
+    print(date_str)
+    print(date_added)
+    print(date_modified)
+    print(lookup_id)
+    
+    date = datetime.strptime(date_str, '%Y-%m-%dT00:00:00')
+    print(date)
+    day = int(date.strftime("%d"))
+    month = int(date.strftime("%m"))
+    year = int(date.strftime("%Y"))
+    next_year = int(date.strftime("%Y")) + 1
+    print(day)
+    print(month)
+    print(year)
+    print(next_year)
+    
+    # Create Reminder for Acknowledgement
 
 try:
     connect_db()
     
     # WorkFlow #1
     print(f"Running WorkFlow #1 -> To tag constituents as Major Donor -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_1_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    
+    list_id = WORKFLOW_1_LIST_ID
+    url_prefix = "https://api.sky.blackbaud.com/constituent/v1/constituents"
+    params = ""
+    constituent_code = "Major Donor"
+    
     workflow_1()
     
     # Workflow #2
-    print(f"Running Workflow #2 -> To assign constituents to Major Donor Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_2_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")    
+    print(f"Running Workflow #2 -> To assign constituents to Major Donor Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_2_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_2_LIST_ID
+    params = ""
+    fundraising_team = "Major Donor Team"
+    fundraising_team_id = "397314"
+    url_prefix = "https://api.sky.blackbaud.com/constituent/v1/constituents"
+    
     workflow_2()
     
     # Workflow #3
     print(f"Running Workflow #3 -> To assign constituents to Corporate Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_3_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_3_LIST_ID
+    params = ""
+    fundraising_team = "Corporate Team"
+    fundraising_team_id = "397340"
+    
+    # Blackbaud API URL
+    url_prefix = "https://api.sky.blackbaud.com/constituent/v1/constituents"
+    
     workflow_3()
     
     # Workflow #4
     print(f"Running Workflow #3 -> To assign custom actions to Corporate Team -> Getting list of gifts in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_4_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_4_LIST_ID
+    params = ""
+    # Blackbaud API URL
+    url_prefix = "https://api.sky.blackbaud.com/gift/v1/gifts"
     workflow_4()
     
     # Close DB connection and exit
@@ -453,4 +502,5 @@ try:
 except Exception as Argument:
     print("Error while running workflows for Raisers Edge")
     subject = "Error while running workflows for Raisers Edge"
+    housekeeping()
     send_error_emails()
