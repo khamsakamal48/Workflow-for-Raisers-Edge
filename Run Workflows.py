@@ -115,6 +115,8 @@ def post_request_re():
     global re_api_response
     re_api_response = http.post(url, params=params, headers=headers, json=params).json()
     
+    print_json(re_api_response)
+    
     check_for_errors()
     
 def check_for_errors():
@@ -128,9 +130,6 @@ def check_for_errors():
         
 def send_error_emails():
     print("Sending email for an error")
-    
-    # Close writing to Process.log
-    sys.stdout.close()
     
     message = MIMEMultipart()
     message["Subject"] = subject
@@ -372,7 +371,7 @@ def workflow_3():
                 assign_fundraisers()
 
 def workflow_4():
-    global url, constituent_id
+    global url, constituent_id, params
     
     get_access_token()
     
@@ -425,36 +424,140 @@ def workflow_4():
     
     print(result)
     
-    # Ensure no comma or brackets in output
-    result_list = list(result[0])
-    gift_id = result_list[0]
-    amount = result_list[1]
-    constituent_id = result_list[2]
-    date_str = result_list[3]
-    date_added = result_list[4]
-    date_modified = result_list[5]
-    lookup_id = result_list[6]
+    while result:
+        # Ensure no comma or brackets in output
+        result_list = list(result[0])
+        gift_id = result_list[0]
+        amount = result_list[1]
+        constituent_id = result_list[2]
+        date_str = result_list[3]
+        date_added = result_list[4]
+        date_modified = result_list[5]
+        lookup_id = result_list[6]
+        
+        print(gift_id)
+        print(amount)
+        print(constituent_id)
+        print(date_str)
+        print(date_added)
+        print(date_modified)
+        print(lookup_id)
+        
+        date = datetime.strptime(date_str, '%Y-%m-%dT00:00:00')
+        print(date)
+        day = int(date.strftime("%d"))
+        month = int(date.strftime("%m"))
+        year = int(date.strftime("%Y"))
+        next_year = int(date.strftime("%Y")) + 1
+        print(day)
+        print(month)
+        print(year)
+        print(next_year)
+        
+        print(list(CORPORATE_FUNDRAISING_TEAM_IDS.split(',')))
+        
+        # Create Action for Acknowledgement
+        params = {
+            'category': 'Task/Other',
+            'constituent_id': constituent_id,
+            'date': str(year) + '-' + str(month) + '-' + str(day) + 'T00:00:00',
+            'description': 'This task is for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'fundraisers': list(CORPORATE_FUNDRAISING_TEAM_IDS.split(',')),
+            'summary': 'Acknowledgement of Gift for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'type': 'Action Items'
+        }
+        
+        print_json(params)
+        
+        add_action()
+
+        # Create Action for Form 10B
+        params = {
+            'category': 'Task/Other',
+            'constituent_id': constituent_id,
+            'date': str(next_year) + '-' + '05' + '-' + '15' + 'T00:00:00',
+            'description': 'This task is for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'fundraisers': list(CORPORATE_FUNDRAISING_TEAM_IDS.split(',')),
+            'summary': 'Send Form 10B to Donor for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'type': 'Action Items'
+        }
+        
+        print_json(params)
+        
+        add_action()
+        
+        # Create Action for FUR
+        params = {
+            'category': 'Task/Other',
+            'constituent_id': constituent_id,
+            'date': str(next_year) + '-' + '06' + '-' + '15' + 'T00:00:00',
+            'description': 'This task is for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'fundraisers': list(CORPORATE_FUNDRAISING_TEAM_IDS.split(',')),
+            'summary': 'Send Fund Utilization Report (FUR) to Donor for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'type': 'Action Items'
+        }
+        
+        print_json(params)
+        
+        add_action()
+        
+        # Create Action for Updating the Donors
+        # For Jan 10
+        params = {
+            'category': 'Task/Other',
+            'constituent_id': constituent_id,
+            'date': str(next_year) + '-' + '01' + '-' + '10' + 'T00:00:00',
+            'description': 'This task is for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'fundraisers': list(CORPORATE_FUNDRAISING_TEAM_IDS.split(',')),
+            'summary': 'Send Update to Donor for their donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'type': 'Action Items'
+        }
+        
+        print_json(params)
+        
+        add_action()
+        
+        # For July 15
+        params = {
+            'category': 'Task/Other',
+            'constituent_id': constituent_id,
+            'date': str(next_year) + '-' + '07' + '-' + '15' + 'T00:00:00',
+            'description': 'This task is for donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'fundraisers': list(CORPORATE_FUNDRAISING_TEAM_IDS.split(',')),
+            'summary': 'Send a second Update to Donor for their donation received on ' + str(day) + " " + datetime.strptime(str(month), "%m").strftime("%b") + ", " + str(year),
+            'type': 'Action Items'
+        }
+        
+        print_json(params)
+        
+        add_action()
+        
+        # Will update in PostgreSQL
+        insert_updates = """
+                        INSERT INTO actions_tagged_for_corporate_gifts (gift_id, amount, constituent_id, date, date_added, date_modified, lookup_id, acknowledgement_added, form_10b_added, fur_added, update_added)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, 'TRUE', 'TRUE', 'TRUE', 'TRUE')
+                        """
+        cur.execute(insert_updates, [gift_id, amount, constituent_id, date_str, date_added, date_modified, lookup_id])
+        conn.commit()
+        print(f"Successfully added actions for Gift ID: {gift_id}")
+        
+        extract_sql =  """
+        SELECT * FROM corporate_gifts WHERE NOT EXISTS (SELECT 1 FROM actions_tagged_for_corporate_gifts WHERE actions_tagged_for_corporate_gifts.gift_id = corporate_gifts.gift_id) FETCH FIRST 1 ROW ONLY;
+        """
+        
+        cur.execute(extract_sql)
+        result = cur.fetchall()
+
+        print(result)
+        
+        if result == []:
+            break
+
+def add_action():
+    global url
+    url = "https://api.sky.blackbaud.com/constituent/v1/actions"
     
-    print(gift_id)
-    print(amount)
-    print(constituent_id)
-    print(date_str)
-    print(date_added)
-    print(date_modified)
-    print(lookup_id)
-    
-    date = datetime.strptime(date_str, '%Y-%m-%dT00:00:00')
-    print(date)
-    day = int(date.strftime("%d"))
-    month = int(date.strftime("%m"))
-    year = int(date.strftime("%Y"))
-    next_year = int(date.strftime("%Y")) + 1
-    print(day)
-    print(month)
-    print(year)
-    print(next_year)
-    
-    # Create Reminder for Acknowledgement
+    post_request_re()
 
 try:
     connect_db()
@@ -489,7 +592,7 @@ try:
     # Blackbaud API URL
     url_prefix = "https://api.sky.blackbaud.com/constituent/v1/constituents"
     
-    workflow_3()
+    workflow_3()   
     
     # Workflow #4
     print(f"Running Workflow #3 -> To assign custom actions to Corporate Team -> Getting list of gifts in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_4_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
