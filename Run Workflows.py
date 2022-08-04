@@ -64,12 +64,16 @@ def connect_db():
     cur = conn.cursor()
     
 def disconnect_db():
+    
     print("Closing connection with SQL database")
      
     # Close DB connection
     if conn:
         cur.close()
         conn.close()
+        
+    # Close writing to Process.log
+    sys.stdout.close()
         
     exit()
 
@@ -497,10 +501,13 @@ try:
     
     # Close DB connection and exit
     housekeeping()
+    
     disconnect_db()
 
 except Exception as Argument:
     print("Error while running workflows for Raisers Edge")
     subject = "Error while running workflows for Raisers Edge"
+    
     housekeeping()
+    
     send_error_emails()
