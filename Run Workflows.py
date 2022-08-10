@@ -52,6 +52,7 @@ WORKFLOW_2_LIST_ID = os.getenv("WORKFLOW_2_LIST_ID")
 WORKFLOW_3_LIST_ID = os.getenv("WORKFLOW_3_LIST_ID")
 CORPORATE_FUNDRAISING_TEAM_IDS = os.getenv("CORPORATE_FUNDRAISING_TEAM_IDS")
 WORKFLOW_4_LIST_ID = os.getenv("WORKFLOW_4_LIST_ID")
+WORKFLOW_5_LIST_ID = os.getenv("WORKFLOW_5_LIST_ID")
 
 def connect_db():
     global conn, cur
@@ -559,6 +560,29 @@ def add_action():
     
     post_request_re()
 
+def workflow_5():
+    global constituent_id, fundraising_team
+    
+    get_access_token()
+    
+    print(f"Getting list of constituents not assigned to {fundraising_team}")
+    
+    get_list_from_re()
+    
+    print("Parsing content from List_from_RE_*.json files")
+    multiple_files = glob.glob("List_from_RE_*.json")
+    
+    for each_file in multiple_files:
+
+        # Open JSON file
+        with open(each_file, 'r') as json_file:
+            json_content = json.load(json_file)
+            
+            for results in json_content['value']:
+                constituent_id = results['id']
+                
+                assign_fundraisers()
+
 try:
     connect_db()
     
@@ -595,12 +619,24 @@ try:
     workflow_3()   
     
     # Workflow #4
-    print(f"Running Workflow #3 -> To assign custom actions to Corporate Team -> Getting list of gifts in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_4_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    print(f"Running Workflow #4 -> To assign custom actions to Corporate Team -> Getting list of gifts in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_4_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
     list_id = WORKFLOW_4_LIST_ID
     params = ""
     # Blackbaud API URL
     url_prefix = "https://api.sky.blackbaud.com/gift/v1/gifts"
     workflow_4()
+    
+    # Workflow #5
+    print(f"Running Workflow #5 -> To assign constituents to Legacy Team -> Getting list of constituents in RE from list - https://host.nxt.blackbaud.com/lists/shared-list/{WORKFLOW_5_LIST_ID}?envid=p-dzY8gGigKUidokeljxaQiA")
+    list_id = WORKFLOW_5_LIST_ID
+    params = ""
+    fundraising_team = "Legacy Team"
+    fundraising_team_id = "398402"
+    
+    # Blackbaud API URL
+    url_prefix = "https://api.sky.blackbaud.com/constituent/v1/constituents"
+    
+    workflow_5() 
     
     # Close DB connection and exit
     housekeeping()
